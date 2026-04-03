@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Generator</title>
+    
+    <!-- Importing a clean, modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Variables for a consistent color theme */
+        :root {
+            --primary: #4F46E5; /* Indigo blue */
+            --primary-hover: #4338CA;
+            --bg-color: #F3F4F6; /* Soft light grey background */
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --correct: #10B981; /* Success green */
+            --wrong: #EF4444; /* Error red */
+        }
+
+        /* Base Page Layout */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            max-width: 700px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            line-height: 1.6;
+        }
+
+        h1 { 
+            text-align: center; 
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        /* Top Control Bar (Dropdown and Button) */
+        .controls-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        select { 
+            padding: 12px 15px; 
+            font-size: 16px; 
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        button { 
+            padding: 12px 24px; 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        button:hover { 
+            background-color: var(--primary-hover); 
+            transform: translateY(-1px);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Loading Animation */
+        #loading { 
+            display: none; 
+            text-align: center;
+            font-weight: 600; 
+            color: var(--primary); 
+            background: #EEF2FF;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Question Cards */
+        .question-card { 
+            background-color: var(--card-bg);
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-left: 6px solid transparent; /* Ready for green/red later */
+            transition: all 0.3s ease; 
+        }
+
+        .question-card h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        /* Multiple Choice Options */
+        .option { 
+            display: flex; 
+            align-items: center;
+            margin: 10px 0; 
+            padding: 12px 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer; 
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .option:hover {
+            background-color: #F9FAFB;
+            border-color: #D1D5DB;
+        }
+
+        .option input {
+            margin-right: 12px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        /* Submit Button */
+        #submit-btn { 
+            width: 100%; 
+            background-color: #111827; /* Dark button so it stands out */
+            margin-top: 10px; 
+            font-size: 1.1rem;
+            padding: 15px;
+            display: none; 
+        }
+
+        #submit-btn:hover { 
+            background-color: #374151; 
+        }
+
+        /* Final Score Display */
+        #results { 
+            margin-top: 30px; 
+            font-size: 28px; 
+            font-weight: 700; 
+            text-align: center; 
+            color: var(--text-main);
+        }
+
+        .correct-text { color: var(--correct); font-weight: 600; margin-top: 15px; }
+        .wrong-text { color: var(--wrong); font-weight: 600; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>AI Quiz Generator</h1>
+    
+    <div class="controls-container">
+        <label for="category">Topic:</label>
+        <select id="category">
+            <option value="science">Science</option>
+            <option value="history">History</option>
+            <option value="geography">Geography</option>
+            <option value="video games">Video Games</option>
+            <option value="movies">Movies</option>
+            <option value="a completely random educational topic">Surprise Me!</option>
+        </select>
+
+        <label for="amount">Questions:</label>
+        <select id="amount">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+        </select>
+
+        <label for="type">Type:</label>
+        <select id="type">
+            <option value="multiple-choice">Multiple Choice</option>
+            <option value="true or false">True / False</option>
+        </select>
+        
+        <button onclick="fetchQuiz()">Generate</button>
+    </div>
+
+    <p id="loading">Generating your questions please wait please wait!</p>
+    
+    <div id="quiz-container"></div>
+    
+    <button id="submit-btn" onclick="calculateScore()">Submit Answers</button>
+    <div id="results"></div>
+
+    <script>
+        let currentQuizData = [];
+
+        async function fetchQuiz() {
+            // 1. Grab all three values from the new dropdowns
+            const category = document.getElementById('category').value;
+            const amount = document.getElementById('amount').value;
+            const type = document.getElementById('type').value;
+            
+            const container = document.getElementById('quiz-container');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultsDiv = document.getElementById('results');
+
+            container.innerHTML = '';
+            resultsDiv.innerHTML = '';
+            submitBtn.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                // 2. Add all three values to the URL using the '&' symbol
+                const url = `http://localhost:3000/api/generate-quiz?category=${category}&amount=${amount}&type=${type}`;
+                const response = await fetch(url);
+                const questions = await response.json();
+                
+                currentQuizData = questions;
+                loading.style.display = 'none';
+
+                questions.forEach((q, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'question-card';
+                    card.id = `card-${index}`; 
+                    
+                    let html = `<h3>${index + 1}. ${q.question}</h3>`;
+                    
+                    q.options.forEach(opt => {
+                        html += `
+                            <label class="option">
+                                <input type="radio" name="question${index}" value="${opt}"> 
+                                ${opt}
+                            </label>
+                        `;
+                    });
+
+                    card.innerHTML = html;
+                    container.appendChild(card);
+                });
+
+                submitBtn.style.display = 'block';
+
+            } catch (error) {
+                loading.style.display = 'none';
+                container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz. Make sure your Node.js backend is running!</p>';
+                console.error(error);
+            }
+        }
+
+        function calculateScore() {
+            let score = 0;
+            const resultsDiv = document.getElementById('results');
+            const submitBtn = document.getElementById('submit-btn');
+
+            currentQuizData.forEach((q, index) => {
+                const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
+                const card = document.getElementById(`card-${index}`);
+
+                if (selectedOption) {
+                    if (selectedOption.value === q.correctAnswer) {
+                        score++;
+                        card.style.borderColor = 'var(--correct)'; 
+                        card.style.backgroundColor = '#ECFDF5'; 
+                        card.innerHTML += `<div class="correct-text">✓ Correct!</div>`;
+                    } else {
+                        card.style.borderColor = 'var(--wrong)'; 
+                        card.style.backgroundColor = '#FEF2F2'; 
+                        card.innerHTML += `<div class="wrong-text">✗ Wrong! The correct answer was: ${q.correctAnswer}</div>`;
+                    }
+                } else {
+                    card.style.borderColor = '#F59E0B'; 
+                    card.style.backgroundColor = '#FFFBEB'; 
+                    card.innerHTML += `<div class="wrong-text" style="color: #D97706;">⚠ You skipped this one! The correct answer was: ${q.correctAnswer}</div>`;
+                }
+
+                const allRadios = card.querySelectorAll('input[type="radio"]');
+                allRadios.forEach(radio => radio.disabled = true);
+            });
+
+            // Added a nice card-like styling to the final result
+            resultsDiv.style.background = '#fff';
+            resultsDiv.style.padding = '20px';
+            resultsDiv.style.borderRadius = '12px';
+            resultsDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
+            resultsDiv.innerHTML = `You scored ${score} out of ${currentQuizData.length}! 🎉`;
+            
+            submitBtn.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
