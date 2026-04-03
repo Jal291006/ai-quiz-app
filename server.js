@@ -23,10 +23,11 @@ app.get('/api/generate-quiz', async (req, res) => {
         const category = req.query.category || 'a completely random educational topic';
         const amount=req.query.amount || 5;
         const type = req.query.type|| 'multiple choice'
-       console.log(`Asking Gemini for ${amount} ${type} questions about: ${category}...`);
+        const difficulty=req.query.difficulty|| 'easy'
+       console.log(`Asking Gemini for ${amount}  ${difficulty} ${type} questions about: ${category}...`);
         
         // 2. Inserts that category directly into the Gemini prompt
-        const prompt = `Generate ${amount} ${type} questions about ${category}. You must return ONLY valid JSON. The JSON should be an array of objects. Each object must have three keys: "question" (a string), "options" (an array of strings representing the choices), and "correctAnswer" (a string that matches one of the options).`;
+        const prompt = `Generate ${amount} ${difficulty} difficulty ${type} questions about ${category}. You must return ONLY valid JSON. The JSON should be an array of objects. Each object must have three keys: "question" (a string), "options" (an array of strings representing the choices), and "correctAnswer" (a string that matches one of the options).`;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,

@@ -212,6 +212,14 @@
             <option value="multiple-choice">Multiple Choice</option>
             <option value="true or false">True / False</option>
         </select>
+
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+            <option value="expert">Expert (College Level)</option>
+        </select>
         
         <button onclick="fetchQuiz()">Generate</button>
     </div>
@@ -227,10 +235,11 @@
         let currentQuizData = [];
 
         async function fetchQuiz() {
-            // 1. Grab all three values from the new dropdowns
+            // 1. Grab the new difficulty value
             const category = document.getElementById('category').value;
             const amount = document.getElementById('amount').value;
             const type = document.getElementById('type').value;
+            const difficulty = document.getElementById('difficulty').value;
             
             const container = document.getElementById('quiz-container');
             const loading = document.getElementById('loading');
@@ -243,8 +252,9 @@
             loading.style.display = 'block';
 
             try {
-                // 2. Add all three values to the URL using the '&' symbol
-                const url = `http://localhost:3000/api/generate-quiz?category=${category}&amount=${amount}&type=${type}`;
+                // 2. Add the difficulty parameter to the URL
+                const url = `http://localhost:3000/api/generate-quiz?category=${category}&amount=${amount}&type=${type}&difficulty=${difficulty}`;
+                
                 const response = await fetch(url);
                 const questions = await response.json();
                 
