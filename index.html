@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Quiz Generator</title>
     
-    <!-- Importing a clean, modern Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -116,6 +115,22 @@
             100% { opacity: 0.6; }
         }
 
+        /* NEW: Beautiful Timer CSS */
+        #timer-display {
+            display: none;
+            background-color: #FEE2E2;
+            color: #DC2626;
+            padding: 10px 25px;
+            border-radius: 999px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 0 auto 20px auto;
+            width: fit-content;
+            border: 2px solid #F87171;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
         /* Question Cards */
         .question-card { 
             background-color: var(--card-bg);
@@ -224,8 +239,10 @@
         <button onclick="fetchQuiz()">Generate</button>
     </div>
 
-    <p id="loading">Generating your questions please wait please wait!</p>
+    <p id="loading">Generating your questions please wait !</p>
     
+    <div id="timer-display">⏱️ 00:00</div>
+
     <div id="quiz-container"></div>
     
     <button id="submit-btn" onclick="calculateScore()">Submit Answers</button>
@@ -233,6 +250,49 @@
 
     <script>
         let currentQuizData = [];
+        // NEW: Global variables to track the clock
+        let timerInterval;
+        let timeRemaining = 0;
+
+        // NEW: The function that runs the clock
+        function startTimer(totalSeconds) {
+            // Stop any old timers if the user hits "Generate" again quickly
+            clearInterval(timerInterval);
+            timeRemaining = totalSeconds;
+            
+            const timerDisplay = document.getElementById('timer-display');
+            timerDisplay.style.display = 'block';
+            timerDisplay.style.backgroundColor = '#FEE2E2'; // Reset color
+            timerDisplay.style.color = '#DC2626';
+
+            // This tiny function runs exactly once every second
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+
+                // Do the math to get Minutes:Seconds format
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                
+                // Add a zero to the front if it's less than 10 (e.g., 0:09 instead of 0:9)
+                const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+                timerDisplay.innerHTML = `⏱️ Time Left: ${minutes}:${formattedSeconds}`;
+
+                // Panic mode! Make it flash if under 10 seconds
+                if (timeRemaining <= 10 && timeRemaining > 0) {
+                    timerDisplay.style.backgroundColor = timeRemaining % 2 === 0 ? '#DC2626' : '#FEE2E2';
+                    timerDisplay.style.color = timeRemaining % 2 === 0 ? '#FFFFFF' : '#DC2626';
+                }
+
+                // If time hits zero, auto-submit!
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.innerHTML = "⏱️ TIME'S UP!";
+                    timerDisplay.style.backgroundColor = '#DC2626';
+                    timerDisplay.style.color = '#FFFFFF';
+                    calculateScore(); // Force the grading!
+                }
+            }, 1000);
+        }
 
         async function fetchQuiz() {
             // 1. Grab the new difficulty value
@@ -245,10 +305,13 @@
             const loading = document.getElementById('loading');
             const submitBtn = document.getElementById('submit-btn');
             const resultsDiv = document.getElementById('results');
+            const timerDisplay = document.getElementById('timer-display'); // NEW
 
             container.innerHTML = '';
             resultsDiv.innerHTML = '';
             submitBtn.style.display = 'none';
+            timerDisplay.style.display = 'none'; // NEW: Hide timer while loading
+            clearInterval(timerInterval); // NEW: Stop any running timer
             loading.style.display = 'block';
 
             try {
@@ -282,6 +345,9 @@
                 });
 
                 submitBtn.style.display = 'block';
+                
+                // NEW: Start the timer! Give them 15 seconds per question
+                startTimer(questions.length * 15);
 
             } catch (error) {
                 loading.style.display = 'none';
@@ -291,14 +357,19 @@
         }
 
         function calculateScore() {
+            // NEW: Stop the clock when they submit manually!
+            clearInterval(timerInterval);
+
             let score = 0;
             const resultsDiv = document.getElementById('results');
             const submitBtn = document.getElementById('submit-btn');
+            
 
             currentQuizData.forEach((q, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 const card = document.getElementById(`card-${index}`);
 
+                // --- THIS IS THE UPDATED SECTION ---
                 if (selectedOption) {
                     if (selectedOption.value === q.correctAnswer) {
                         score++;
@@ -308,19 +379,27 @@
                     } else {
                         card.style.borderColor = 'var(--wrong)'; 
                         card.style.backgroundColor = '#FEF2F2'; 
-                        card.innerHTML += `<div class="wrong-text">✗ Wrong! The correct answer was: ${q.correctAnswer}</div>`;
+                        // NEW: Added the explanation here!
+                        card.innerHTML += `
+                            <div class="wrong-text">✗ Wrong! The correct answer was: <strong>${q.correctAnswer}</strong></div>
+                            <div style="margin-top: 10px; font-size: 0.95rem; color: #4B5563;"><em><strong>Tutor:</strong> ${q.explanation}</em></div>
+                        `;
                     }
                 } else {
                     card.style.borderColor = '#F59E0B'; 
                     card.style.backgroundColor = '#FFFBEB'; 
-                    card.innerHTML += `<div class="wrong-text" style="color: #D97706;">⚠ You skipped this one! The correct answer was: ${q.correctAnswer}</div>`;
+                    // NEW: Added the explanation here too!
+                    card.innerHTML += `
+                        <div class="wrong-text" style="color: #D97706;">⚠ You skipped this one! The correct answer was: <strong>${q.correctAnswer}</strong></div>
+                        <div style="margin-top: 10px; font-size: 0.95rem; color: #4B5563;"><em><strong>Tutor:</strong> ${q.explanation}</em></div>
+                    `;
                 }
+                // -----------------------------------
 
                 const allRadios = card.querySelectorAll('input[type="radio"]');
                 allRadios.forEach(radio => radio.disabled = true);
             });
 
-            // Added a nice card-like styling to the final result
             resultsDiv.style.background = '#fff';
             resultsDiv.style.padding = '20px';
             resultsDiv.style.borderRadius = '12px';
@@ -328,6 +407,7 @@
             resultsDiv.innerHTML = `You scored ${score} out of ${currentQuizData.length}! 🎉`;
             
             submitBtn.style.display = 'none';
+            
         }
     </script>
 </body>
