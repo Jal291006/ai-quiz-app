@@ -6,7 +6,7 @@
     <title>AI Quiz Generator</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
+    <script src="questions.js"></script>
     <style>
         /* CSS Variables for a consistent color theme */
         :root {
@@ -241,7 +241,12 @@
 
     <p id="loading">Generating your questions please wait !</p>
     
-    <div id="timer-display">⏱️ 00:00</div>
+    <div id="timer-display"> ⏱️ 00:00</div>
+        <div id="progress-bar-container" style="display:none; background:#E5E7EB; border-radius:999px; height:10px; margin-bottom:20px;">
+  <div id="progress-bar" style="height:10px; background:#4F46E5; border-radius:999px; width:0%; transition:width 0.4s ease;"></div>
+</div>
+<p id="progress-text" style="text-align:center; color:#6B7280; font-size:0.9rem; display:none;"></p>
+        
 
     <div id="quiz-container"></div>
     
@@ -293,68 +298,86 @@
                 }
             }, 1000);
         }
-
         async function fetchQuiz() {
-            // 1. Grab the new difficulty value
-            const category = document.getElementById('category').value;
-            const amount = document.getElementById('amount').value;
-            const type = document.getElementById('type').value;
-            const difficulty = document.getElementById('difficulty').value;
-            
-            const container = document.getElementById('quiz-container');
-            const loading = document.getElementById('loading');
-            const submitBtn = document.getElementById('submit-btn');
-            const resultsDiv = document.getElementById('results');
-            const timerDisplay = document.getElementById('timer-display'); // NEW
+    const category = document.getElementById('category').value;
+    const amount = parseInt(document.getElementById('amount').value);
+    const difficulty = document.getElementById('difficulty').value;
+    
+    const container = document.getElementById('quiz-container');
+    const loading = document.getElementById('loading');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultsDiv = document.getElementById('results');
+    const timerDisplay = document.getElementById('timer-display');
 
-            container.innerHTML = '';
-            resultsDiv.innerHTML = '';
-            submitBtn.style.display = 'none';
-            timerDisplay.style.display = 'none'; // NEW: Hide timer while loading
-            clearInterval(timerInterval); // NEW: Stop any running timer
-            loading.style.display = 'block';
+    container.innerHTML = '';
+    resultsDiv.innerHTML = '';
+    submitBtn.style.display = 'none';
 
-            try {
-                // 2. Add the difficulty parameter to the URL
-                const url = `http://localhost:3000/api/generate-quiz?category=${category}&amount=${amount}&type=${type}&difficulty=${difficulty}`;
-                
-                const response = await fetch(url);
-                const questions = await response.json();
-                
-                currentQuizData = questions;
-                loading.style.display = 'none';
+    timerDisplay.style.display = 'none'; 
+    clearInterval(timerInterval); 
+    loading.style.display = 'block';
 
-                questions.forEach((q, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'question-card';
-                    card.id = `card-${index}`; 
-                    
-                    let html = `<h3>${index + 1}. ${q.question}</h3>`;
-                    
-                    q.options.forEach(opt => {
-                        html += `
-                            <label class="option">
-                                <input type="radio" name="question${index}" value="${opt}"> 
-                                ${opt}
-                            </label>
-                        `;
-                    });
+    try {
+        let allQuestions = [];
 
-                    card.innerHTML = html;
-                    container.appendChild(card);
-                });
-
-                submitBtn.style.display = 'block';
-                
-                // NEW: Start the timer! Give them 15 seconds per question
-                startTimer(questions.length * 15);
-
-            } catch (error) {
-                loading.style.display = 'none';
-                container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz. Make sure your Node.js backend is running!</p>';
-                console.error(error);
-            }
+        // THE FIX: Handle the "Surprise Me" option
+        if (category === "a completely random educational topic") {
+            // Combine all arrays inside the questionBank into one giant array
+            Object.values(questionBank).forEach(categoryArray => {
+                allQuestions = allQuestions.concat(categoryArray);
+            });
+        } else {
+            // Otherwise, just use the specific category they picked
+            allQuestions = questionBank[category];
         }
+
+        // Filter by difficulty
+        const filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
+        
+        // Shuffle and slice the exact amount needed
+        const shuffled = filteredQuestions.sort(() => Math.random() - 0.5);
+        const questions = shuffled.slice(0, amount);
+
+        if (questions.length === 0) {
+            loading.style.display = 'none';
+            container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this difficulty!</p>';
+            return;
+        }
+
+        currentQuizData = questions;
+        loading.style.display = 'none';
+        document.getElementById('progress-bar-container').style.display = 'block';
+        document.getElementById('progress-text').style.display = 'block';
+        updateProgressBar(0, questions.length);
+
+        questions.forEach((q, index) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `card-${index}`;
+            let html = `<h3>${index + 1}. ${q.question}</h3>`;
+            q.options.forEach(opt => {
+                html += `<label class="option"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
+            });
+            card.innerHTML = html;
+            card.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+                    updateProgressBar(answered, currentQuizData.length);
+                });
+            });
+            container.appendChild(card);
+        });
+
+        submitBtn.style.display = 'block';
+        startTimer(questions.length * 15);
+
+    } catch (error) {
+        loading.style.display = 'none';
+        container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz data.</p>';
+        console.error(error);
+    }
+}
+        
 
         function calculateScore() {
             // NEW: Stop the clock when they submit manually!
@@ -373,6 +396,7 @@
                 if (selectedOption) {
                     if (selectedOption.value === q.correctAnswer) {
                         score++;
+                        updateProgressBar(index + 1, currentQuizData.length);
                         card.style.borderColor = 'var(--correct)'; 
                         card.style.backgroundColor = '#ECFDF5'; 
                         card.innerHTML += `<div class="correct-text">✓ Correct!</div>`;
@@ -409,6 +433,11 @@
             submitBtn.style.display = 'none';
             
         }
+        function updateProgressBar(answered, total) {
+    const percent = (answered / total) * 100;
+    document.getElementById('progress-bar').style.width = percent + '%';
+    document.getElementById('progress-text').textContent = `Question ${answered} of ${total}`;
+}
     </script>
 </body>
 </html>
