@@ -10,14 +10,29 @@
     <style>
         /* CSS Variables for a consistent color theme */
         :root {
-            --primary: #4F46E5; /* Indigo blue */
+            --primary: #4F46E5; 
             --primary-hover: #4338CA;
-            --bg-color: #F3F4F6; /* Soft light grey background */
+            --bg-color: #F3F4F6; 
             --card-bg: #FFFFFF;
             --text-main: #1F2937;
             --text-muted: #6B7280;
-            --correct: #10B981; /* Success green */
-            --wrong: #EF4444; /* Error red */
+            --correct: #10B981; 
+            --wrong: #EF4444; 
+            --option-hover: #F9FAFB;
+            --option-border: #E5E7EB;
+        }
+
+        /* EXTREME MODE THEME VARIABLES (Kept just in case you add them back!) */
+        body.extreme-theme {
+            --primary: #DC2626; 
+            --primary-hover: #B91C1C;
+            --bg-color: #110000; 
+            --card-bg: #220000;
+            --text-main: #FCA5A5;
+            --text-muted: #F87171;
+            --option-hover: #3A0000;
+            --option-border: #7F1D1D;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
         /* Base Page Layout */
@@ -29,6 +44,7 @@
             margin: 0 auto; 
             padding: 40px 20px; 
             line-height: 1.6;
+            transition: background-color 0.4s ease;
         }
 
         h1 { 
@@ -39,7 +55,7 @@
             margin-bottom: 30px;
         }
 
-        /* Top Control Bar (Dropdown and Button) */
+        /* Top Control Bar */
         .controls-container {
             background: var(--card-bg);
             padding: 20px;
@@ -51,6 +67,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 30px;
+            border: 1px solid var(--option-border);
         }
 
         label {
@@ -61,9 +78,11 @@
         select { 
             padding: 12px 15px; 
             font-size: 16px; 
-            border: 1px solid #D1D5DB;
+            border: 1px solid var(--option-border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
+            background-color: var(--card-bg);
+            color: var(--text-main);
             cursor: pointer;
             outline: none;
             transition: border-color 0.2s;
@@ -102,7 +121,7 @@
             text-align: center;
             font-weight: 600; 
             color: var(--primary); 
-            background: #EEF2FF;
+            background: var(--card-bg);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -115,7 +134,7 @@
             100% { opacity: 0.6; }
         }
 
-        /* NEW: Beautiful Timer CSS */
+        /* Timer CSS */
         #timer-display {
             display: none;
             background-color: #FEE2E2;
@@ -129,6 +148,14 @@
             width: fit-content;
             border: 2px solid #F87171;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: opacity 0.2s ease;
+        }
+
+        body.extreme-theme #timer-display {
+            background-color: #450a0a;
+            color: #fca5a5;
+            border-color: #dc2626;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
         }
 
         /* Question Cards */
@@ -138,7 +165,8 @@
             margin-bottom: 20px; 
             border-radius: 12px; 
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            border-left: 6px solid transparent; /* Ready for green/red later */
+            border-left: 6px solid transparent; 
+            border: 1px solid var(--option-border);
             transition: all 0.3s ease; 
         }
 
@@ -155,15 +183,16 @@
             align-items: center;
             margin: 10px 0; 
             padding: 12px 15px;
-            border: 1px solid #E5E7EB;
+            border: 1px solid var(--option-border);
             border-radius: 8px;
             cursor: pointer; 
             transition: background-color 0.2s, border-color 0.2s;
+            color: var(--text-main);
         }
 
         .option:hover {
-            background-color: #F9FAFB;
-            border-color: #D1D5DB;
+            background-color: var(--option-hover);
+            border-color: var(--primary);
         }
 
         .option input {
@@ -172,10 +201,21 @@
             cursor: pointer;
         }
 
+        /* True/False Specific Layout */
+        .tf-option {
+            display: inline-flex;
+            width: 44%; /* Puts them side-by-side */
+            margin: 10px 2%;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
         /* Submit Button */
         #submit-btn { 
             width: 100%; 
-            background-color: #111827; /* Dark button so it stands out */
+            background-color: #111827; 
             margin-top: 10px; 
             font-size: 1.1rem;
             padding: 15px;
@@ -228,12 +268,12 @@
             <option value="true or false">True / False</option>
         </select>
 
-        <label for="difficulty">Difficulty:</label>
+        <label for="difficulty">Difficulty (MCQ only):</label>
         <select id="difficulty">
             <option value="easy">Easy</option>
             <option value="medium" selected>Medium</option>
             <option value="hard">Hard</option>
-            <option value="expert">Expert (College Level)</option>
+            <option value="extreme">Extreme 💀</option>
         </select>
         
         <button onclick="fetchQuiz()">Generate</button>
@@ -242,12 +282,12 @@
     <p id="loading">Generating your questions please wait !</p>
     
     <div id="timer-display"> ⏱️ 00:00</div>
-        <div id="progress-bar-container" style="display:none; background:#E5E7EB; border-radius:999px; height:10px; margin-bottom:20px;">
-  <div id="progress-bar" style="height:10px; background:#4F46E5; border-radius:999px; width:0%; transition:width 0.4s ease;"></div>
-</div>
-<p id="progress-text" style="text-align:center; color:#6B7280; font-size:0.9rem; display:none;"></p>
+    
+    <div id="progress-bar-container" style="display:none; background:var(--option-border); border-radius:999px; height:10px; margin-bottom:20px;">
+        <div id="progress-bar" style="height:10px; background:var(--primary); border-radius:999px; width:0%; transition:width 0.4s ease;"></div>
+    </div>
+    <p id="progress-text" style="text-align:center; color:var(--text-muted); font-size:0.9rem; display:none;"></p>
         
-
     <div id="quiz-container"></div>
     
     <button id="submit-btn" onclick="calculateScore()">Submit Answers</button>
@@ -255,189 +295,190 @@
 
     <script>
         let currentQuizData = [];
-        // NEW: Global variables to track the clock
         let timerInterval;
         let timeRemaining = 0;
 
-        // NEW: The function that runs the clock
         function startTimer(totalSeconds) {
-            // Stop any old timers if the user hits "Generate" again quickly
             clearInterval(timerInterval);
             timeRemaining = totalSeconds;
             
             const timerDisplay = document.getElementById('timer-display');
             timerDisplay.style.display = 'block';
-            timerDisplay.style.backgroundColor = '#FEE2E2'; // Reset color
-            timerDisplay.style.color = '#DC2626';
 
-            // This tiny function runs exactly once every second
             timerInterval = setInterval(() => {
                 timeRemaining--;
 
-                // Do the math to get Minutes:Seconds format
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
-                
-                // Add a zero to the front if it's less than 10 (e.g., 0:09 instead of 0:9)
                 const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+                
                 timerDisplay.innerHTML = `⏱️ Time Left: ${minutes}:${formattedSeconds}`;
 
-                // Panic mode! Make it flash if under 10 seconds
                 if (timeRemaining <= 10 && timeRemaining > 0) {
-                    timerDisplay.style.backgroundColor = timeRemaining % 2 === 0 ? '#DC2626' : '#FEE2E2';
-                    timerDisplay.style.color = timeRemaining % 2 === 0 ? '#FFFFFF' : '#DC2626';
+                    timerDisplay.style.opacity = timeRemaining % 2 === 0 ? '0.5' : '1';
                 }
 
-                // If time hits zero, auto-submit!
                 if (timeRemaining <= 0) {
                     clearInterval(timerInterval);
                     timerDisplay.innerHTML = "⏱️ TIME'S UP!";
-                    timerDisplay.style.backgroundColor = '#DC2626';
-                    timerDisplay.style.color = '#FFFFFF';
-                    calculateScore(); // Force the grading!
+                    timerDisplay.style.opacity = '1';
+                    calculateScore(); 
                 }
             }, 1000);
         }
+
         async function fetchQuiz() {
-    const category = document.getElementById('category').value;
-    const amount = parseInt(document.getElementById('amount').value);
-    const difficulty = document.getElementById('difficulty').value;
-    
-    const container = document.getElementById('quiz-container');
-    const loading = document.getElementById('loading');
-    const submitBtn = document.getElementById('submit-btn');
-    const resultsDiv = document.getElementById('results');
-    const timerDisplay = document.getElementById('timer-display');
+            const category = document.getElementById('category').value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const difficulty = document.getElementById('difficulty').value;
+            
+            const container = document.getElementById('quiz-container');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultsDiv = document.getElementById('results');
+            const timerDisplay = document.getElementById('timer-display');
 
-    container.innerHTML = '';
-    resultsDiv.innerHTML = '';
-    submitBtn.style.display = 'none';
+            if (difficulty === "extreme" && type === "multiple-choice") {
+                document.body.classList.add("extreme-theme");
+            } else {
+                document.body.classList.remove("extreme-theme");
+            }
 
-    timerDisplay.style.display = 'none'; 
-    clearInterval(timerInterval); 
-    loading.style.display = 'block';
+            container.innerHTML = '';
+            resultsDiv.innerHTML = '';
+            submitBtn.style.display = 'none';
+            timerDisplay.style.display = 'none'; 
+            timerDisplay.style.opacity = '1';
+            clearInterval(timerInterval); 
+            loading.style.display = 'block';
 
-    try {
-        let allQuestions = [];
+            try {
+                let allQuestions = [];
 
-        // THE FIX: Handle the "Surprise Me" option
-        if (category === "a completely random educational topic") {
-            // Combine all arrays inside the questionBank into one giant array
-            Object.values(questionBank).forEach(categoryArray => {
-                allQuestions = allQuestions.concat(categoryArray);
-            });
-        } else {
-            // Otherwise, just use the specific category they picked
-            allQuestions = questionBank[category];
-        }
+                if (category === "a completely random educational topic") {
+                    Object.values(questionBank).forEach(categoryArray => {
+                        allQuestions = allQuestions.concat(categoryArray);
+                    });
+                } else {
+                    allQuestions = questionBank[category];
+                }
 
-        // Filter by difficulty
-        const filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
-        
-        // Shuffle and slice the exact amount needed
-        const shuffled = filteredQuestions.sort(() => Math.random() - 0.5);
-        const questions = shuffled.slice(0, amount);
+                // FILTERING LOGIC
+                let filteredQuestions = [];
+                if (type === "true or false") {
+                    // Grab only the T/F questions
+                    filteredQuestions = allQuestions.filter(q => q.difficulty === "true/false");
+                } else {
+                    // Grab the MCQ questions based on difficulty
+                    filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
+                }
+                
+                const shuffled = filteredQuestions.sort(() => Math.random() - 0.5);
+                const questions = shuffled.slice(0, amount);
 
-        if (questions.length === 0) {
-            loading.style.display = 'none';
-            container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this difficulty!</p>';
-            return;
-        }
+                if (questions.length === 0) {
+                    loading.style.display = 'none';
+                    container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this selection!</p>';
+                    return;
+                }
 
-        currentQuizData = questions;
-        loading.style.display = 'none';
-        document.getElementById('progress-bar-container').style.display = 'block';
-        document.getElementById('progress-text').style.display = 'block';
-        updateProgressBar(0, questions.length);
+                currentQuizData = questions;
+                loading.style.display = 'none';
+                document.getElementById('progress-bar-container').style.display = 'block';
+                document.getElementById('progress-text').style.display = 'block';
+                updateProgressBar(0, questions.length);
 
-        questions.forEach((q, index) => {
-            const card = document.createElement('div');
-            card.className = 'question-card';
-            card.id = `card-${index}`;
-            let html = `<h3>${index + 1}. ${q.question}</h3>`;
-            q.options.forEach(opt => {
-                html += `<label class="option"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
-            });
-            card.innerHTML = html;
-            card.querySelectorAll('input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', () => {
-                    const answered = document.querySelectorAll('input[type="radio"]:checked').length;
-                    updateProgressBar(answered, currentQuizData.length);
+                questions.forEach((q, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'question-card';
+                    card.id = `card-${index}`;
+                    let html = `<h3>${index + 1}. ${q.question}</h3>`;
+                    
+                    q.options.forEach(opt => {
+                        let optionClass = "option";
+                        // Apply special styling if it's a T/F question
+                        if (q.difficulty === "true/false") {
+                            optionClass += " tf-option";
+                        }
+                        html += `<label class="${optionClass}"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
+                    });
+                    
+                    card.innerHTML = html;
+                    card.querySelectorAll('input[type="radio"]').forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+                            updateProgressBar(answered, currentQuizData.length);
+                        });
+                    });
+                    container.appendChild(card);
                 });
-            });
-            container.appendChild(card);
-        });
 
-        submitBtn.style.display = 'block';
-        startTimer(questions.length * 15);
+                submitBtn.style.display = 'block';
+                startTimer(questions.length * 15); 
 
-    } catch (error) {
-        loading.style.display = 'none';
-        container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz data.</p>';
-        console.error(error);
-    }
-}
+            } catch (error) {
+                loading.style.display = 'none';
+                container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz data.</p>';
+                console.error(error);
+            }
+        }
         
-
         function calculateScore() {
-            // NEW: Stop the clock when they submit manually!
             clearInterval(timerInterval);
 
             let score = 0;
             const resultsDiv = document.getElementById('results');
             const submitBtn = document.getElementById('submit-btn');
             
+            const isExtreme = document.body.classList.contains("extreme-theme");
 
             currentQuizData.forEach((q, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 const card = document.getElementById(`card-${index}`);
 
-                // --- THIS IS THE UPDATED SECTION ---
                 if (selectedOption) {
                     if (selectedOption.value === q.correctAnswer) {
                         score++;
                         updateProgressBar(index + 1, currentQuizData.length);
                         card.style.borderColor = 'var(--correct)'; 
-                        card.style.backgroundColor = '#ECFDF5'; 
+                        card.style.backgroundColor = isExtreme ? '#064e3b' : '#ECFDF5'; 
                         card.innerHTML += `<div class="correct-text">✓ Correct!</div>`;
                     } else {
                         card.style.borderColor = 'var(--wrong)'; 
-                        card.style.backgroundColor = '#FEF2F2'; 
-                        // NEW: Added the explanation here!
+                        card.style.backgroundColor = isExtreme ? '#450a0a' : '#FEF2F2'; 
                         card.innerHTML += `
                             <div class="wrong-text">✗ Wrong! The correct answer was: <strong>${q.correctAnswer}</strong></div>
-                            <div style="margin-top: 10px; font-size: 0.95rem; color: #4B5563;"><em><strong>Tutor:</strong> ${q.explanation}</em></div>
+                            <div style="margin-top: 10px; font-size: 0.95rem; color: var(--text-muted);"><em><strong>Explanation:</strong> ${q.explanation}</em></div>
                         `;
                     }
                 } else {
                     card.style.borderColor = '#F59E0B'; 
-                    card.style.backgroundColor = '#FFFBEB'; 
-                    // NEW: Added the explanation here too!
+                    card.style.backgroundColor = isExtreme ? '#451a03' : '#FFFBEB'; 
                     card.innerHTML += `
                         <div class="wrong-text" style="color: #D97706;">⚠ You skipped this one! The correct answer was: <strong>${q.correctAnswer}</strong></div>
-                        <div style="margin-top: 10px; font-size: 0.95rem; color: #4B5563;"><em><strong>Tutor:</strong> ${q.explanation}</em></div>
+                        <div style="margin-top: 10px; font-size: 0.95rem; color: var(--text-muted);"><em><strong>Explanation:</strong> ${q.explanation}</em></div>
                     `;
                 }
-                // -----------------------------------
 
                 const allRadios = card.querySelectorAll('input[type="radio"]');
                 allRadios.forEach(radio => radio.disabled = true);
             });
 
-            resultsDiv.style.background = '#fff';
+            resultsDiv.style.background = 'var(--card-bg)';
             resultsDiv.style.padding = '20px';
             resultsDiv.style.borderRadius = '12px';
             resultsDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
             resultsDiv.innerHTML = `You scored ${score} out of ${currentQuizData.length}! 🎉`;
             
             submitBtn.style.display = 'none';
-            
         }
+
         function updateProgressBar(answered, total) {
-    const percent = (answered / total) * 100;
-    document.getElementById('progress-bar').style.width = percent + '%';
-    document.getElementById('progress-text').textContent = `Question ${answered} of ${total}`;
-}
+            const percent = (answered / total) * 100;
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = `Question ${answered} of ${total}`;
+        }
     </script>
 </body>
 </html>
