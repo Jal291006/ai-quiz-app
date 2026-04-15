@@ -4,70 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Quiz Generator</title>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="questions.js"></script>
     <style>
-        /* CSS Variables for a consistent color theme */
         :root {
-            --primary: #4F46E5; 
-            --primary-hover: #4338CA;
-            --bg-color: #F3F4F6; 
-            --card-bg: #FFFFFF;
-            --text-main: #1F2937;
-            --text-muted: #6B7280;
-            --correct: #10B981; 
-            --wrong: #EF4444; 
-            --option-hover: #F9FAFB;
-            --option-border: #E5E7EB;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --correct: #10b981;
+            --wrong: #ef4444;
+            --option-hover: #f9fafb;
+            --option-border: #e5e7eb;
+            --accent: #f59e0b;
+            --auth-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
         }
 
-        /* EXTREME MODE THEME VARIABLES (Kept just in case you add them back!) */
         body.extreme-theme {
-            --primary: #DC2626; 
-            --primary-hover: #B91C1C;
-            --bg-color: #110000; 
+            --primary: #dc2626;
+            --primary-hover: #b91c1c;
+            --bg-color: #110000;
             --card-bg: #220000;
-            --text-main: #FCA5A5;
-            --text-muted: #F87171;
-            --option-hover: #3A0000;
-            --option-border: #7F1D1D;
+            --text-main: #fca5a5;
+            --text-muted: #f87171;
+            --option-hover: #3a0000;
+            --option-border: #7f1d1d;
             transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* Base Page Layout */
-        body { 
-            font-family: 'Inter', sans-serif; 
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            max-width: 700px; 
-            margin: 0 auto; 
-            padding: 40px 20px; 
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 40px 20px;
             line-height: 1.6;
             transition: background-color 0.4s ease;
         }
 
-        h1 { 
-            text-align: center; 
+        h1 {
+            text-align: center;
             color: var(--primary);
             font-weight: 700;
             font-size: 2.5rem;
             margin-bottom: 30px;
         }
 
-        /* Top Control Bar */
-        .controls-container {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
+        .page-shell {
+            display: none;
+        }
+
+        body.authenticated .page-shell {
+            display: block;
+        }
+
+        .auth-screen {
+            min-height: calc(100vh - 80px);
+            display: grid;
+            place-items: center;
+        }
+
+        body.authenticated .auth-screen {
+            display: none;
+        }
+
+        .auth-card {
+            width: min(100%, 460px);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(79, 70, 229, 0.12);
+            border-radius: 24px;
+            box-shadow: var(--auth-shadow);
+            overflow: hidden;
+        }
+
+        .auth-hero {
+            padding: 28px 28px 18px;
+            background:
+                radial-gradient(circle at top right, rgba(245, 158, 11, 0.22), transparent 35%),
+                radial-gradient(circle at top left, rgba(79, 70, 229, 0.18), transparent 38%),
+                #eef2ff;
+        }
+
+        .auth-kicker {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
-            border: 1px solid var(--option-border);
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #3730a3;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .auth-hero h2 {
+            margin: 16px 0 10px;
+            font-size: 2rem;
+            line-height: 1.1;
+            color: #111827;
+        }
+
+        .auth-hero p {
+            margin: 0;
+            color: #475569;
+        }
+
+        .auth-form {
+            padding: 28px;
+        }
+
+        .auth-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 14px;
+        }
+
+        .auth-tab {
+            background: transparent;
+            color: #3730a3;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 8px 18px rgba(79, 70, 229, 0.12);
+        }
+
+        .field-group {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
         label {
@@ -75,52 +155,327 @@
             color: var(--text-muted);
         }
 
-        select { 
-            padding: 12px 15px; 
-            font-size: 16px; 
+        .field-group input,
+        select {
+            width: 100%;
+            padding: 14px 16px;
             border: 1px solid var(--option-border);
-            border-radius: 8px;
+            border-radius: 12px;
+            font-size: 1rem;
             font-family: 'Inter', sans-serif;
-            background-color: var(--card-bg);
             color: var(--text-main);
-            cursor: pointer;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        button { 
-            padding: 12px 24px; 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 16px; 
+        .field-group input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
+        }
+
+        .auth-helper {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: -2px 0 18px;
+        }
+
+        .auth-message {
+            min-height: 24px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .auth-message.error {
+            color: var(--wrong);
+        }
+
+        .auth-message.success {
+            color: var(--correct);
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
             font-weight: 600;
             font-family: 'Inter', sans-serif;
             transition: all 0.2s;
         }
 
-        button:hover { 
-            background-color: var(--primary-hover); 
+        button:hover {
+            background-color: var(--primary-hover);
             transform: translateY(-1px);
         }
-        
+
         button:active {
             transform: scale(0.98);
         }
 
-        /* Loading Animation */
-        #loading { 
-            display: none; 
+        .auth-submit {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 1rem;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .welcome-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--option-border);
+            color: var(--text-main);
+            font-weight: 600;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .welcome-chip strong {
+            color: var(--primary);
+        }
+
+        .logout-btn {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--option-border);
+        }
+
+        .logout-btn:hover {
+            background: #f8fafc;
+        }
+
+        .controls-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 30px;
+            border: 1px solid var(--option-border);
+        }
+
+        .controls-container button {
+            width: 100%;
+        }
+
+        .dashboard {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+            padding: 22px;
+            border-radius: 18px;
+            border: 1px solid var(--option-border);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+            margin-bottom: 28px;
+        }
+
+        .dashboard-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .dashboard-head h2 {
+            margin: 0;
+            font-size: 1.35rem;
+            color: var(--text-main);
+        }
+
+        .dashboard-head p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
+        }
+
+        .clear-history-btn {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fdba74;
+        }
+
+        .clear-history-btn:hover {
+            background: #ffedd5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--option-border);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .stat-card span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-card strong {
+            font-size: 1.6rem;
+            color: var(--primary);
+        }
+
+        .history-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            border: 1px solid var(--option-border);
+            border-radius: 16px;
+            padding: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .history-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .history-title {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .history-date {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+        }
+
+        .history-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .history-tag {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 0.84rem;
+            font-weight: 600;
+        }
+
+        .history-score {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .history-empty {
             text-align: center;
-            font-weight: 600; 
-            color: var(--primary); 
+            padding: 20px;
+            border: 1px dashed var(--option-border);
+            border-radius: 16px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .review-panel {
+            display: none;
+            margin-top: 22px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+            border: 1px solid var(--option-border);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .review-panel.visible {
+            display: block;
+        }
+
+        .review-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .review-head h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .review-head p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
+        }
+
+        .review-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .review-item {
+            border: 1px solid var(--option-border);
+            border-radius: 16px;
+            padding: 16px;
+            background: var(--card-bg);
+        }
+
+        .review-item h3 {
+            margin: 0 0 12px;
+            font-size: 1.05rem;
+        }
+
+        .review-row {
+            margin: 8px 0;
+            color: var(--text-main);
+        }
+
+        .review-row span {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .review-empty {
+            color: var(--correct);
+            font-weight: 700;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 14px;
+            padding: 14px 16px;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
             background: var(--card-bg);
             padding: 15px;
             border-radius: 8px;
@@ -134,11 +489,10 @@
             100% { opacity: 0.6; }
         }
 
-        /* Timer CSS */
         #timer-display {
             display: none;
-            background-color: #FEE2E2;
-            color: #DC2626;
+            background-color: #fee2e2;
+            color: #dc2626;
             padding: 10px 25px;
             border-radius: 999px;
             font-size: 1.25rem;
@@ -146,8 +500,8 @@
             text-align: center;
             margin: 0 auto 20px auto;
             width: fit-content;
-            border: 2px solid #F87171;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid #f87171;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             transition: opacity 0.2s ease;
         }
 
@@ -158,16 +512,15 @@
             box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
         }
 
-        /* Question Cards */
-        .question-card { 
+        .question-card {
             background-color: var(--card-bg);
-            padding: 25px; 
-            margin-bottom: 20px; 
-            border-radius: 12px; 
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            border-left: 6px solid transparent; 
+            border-left: 6px solid transparent;
             border: 1px solid var(--option-border);
-            transition: all 0.3s ease; 
+            transition: all 0.3s ease;
         }
 
         .question-card h3 {
@@ -177,15 +530,14 @@
             color: var(--text-main);
         }
 
-        /* Multiple Choice Options */
-        .option { 
-            display: flex; 
+        .option {
+            display: flex;
             align-items: center;
-            margin: 10px 0; 
+            margin: 10px 0;
             padding: 12px 15px;
             border: 1px solid var(--option-border);
             border-radius: 8px;
-            cursor: pointer; 
+            cursor: pointer;
             transition: background-color 0.2s, border-color 0.2s;
             color: var(--text-main);
         }
@@ -196,15 +548,15 @@
         }
 
         .option input {
+            width: auto;
             margin-right: 12px;
             transform: scale(1.2);
             cursor: pointer;
         }
 
-        /* True/False Specific Layout */
         .tf-option {
             display: inline-flex;
-            width: 44%; /* Puts them side-by-side */
+            width: 44%;
             margin: 10px 2%;
             justify-content: center;
             font-weight: bold;
@@ -212,96 +564,438 @@
             text-align: center;
         }
 
-        /* Submit Button */
-        #submit-btn { 
-            width: 100%; 
-            background-color: #111827; 
-            margin-top: 10px; 
+        #submit-btn {
+            width: 100%;
+            background-color: #111827;
+            margin-top: 10px;
             font-size: 1.1rem;
             padding: 15px;
-            display: none; 
+            display: none;
         }
 
-        #submit-btn:hover { 
-            background-color: #374151; 
+        #submit-btn:hover {
+            background-color: #374151;
         }
 
-        /* Final Score Display */
-        #results { 
-            margin-top: 30px; 
-            font-size: 28px; 
-            font-weight: 700; 
-            text-align: center; 
+        #results {
+            margin-top: 30px;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
             color: var(--text-main);
         }
 
-        .correct-text { color: var(--correct); font-weight: 600; margin-top: 15px; }
-        .wrong-text { color: var(--wrong); font-weight: 600; margin-top: 15px; }
+        .correct-text {
+            color: var(--correct);
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .wrong-text {
+            color: var(--wrong);
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 24px 16px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .welcome-chip,
+            .logout-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .controls-container {
+                grid-template-columns: 1fr;
+            }
+
+            .tf-option {
+                width: 100%;
+                margin: 8px 0;
+            }
+        }
     </style>
 </head>
 <body>
+    <section class="auth-screen">
+        <div class="auth-card">
+            <div class="auth-hero">
+                <span class="auth-kicker">AI Quiz Portal</span>
+                <h2>Login before you play</h2>
+                <p>Save your spot, enter the quiz room, and keep the experience a little more personal.</p>
+            </div>
+            <form class="auth-form" id="auth-form">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" type="button" id="login-tab">Login</button>
+                    <button class="auth-tab" type="button" id="signup-tab">Sign Up</button>
+                </div>
 
-    <h1>AI Quiz Generator</h1>
-    
-    <div class="controls-container">
-        <label for="category">Topic:</label>
-        <select id="category">
-            <option value="science">Science</option>
-            <option value="history">History</option>
-            <option value="geography">Geography</option>
-            <option value="video games">Video Games</option>
-            <option value="movies">Movies</option>
-            <option value="a completely random educational topic">Surprise Me!</option>
-        </select>
+                <div class="field-group" id="name-field" style="display:none;">
+                    <label for="name">Full Name</label>
+                    <input id="name" name="name" type="text" placeholder="Enter your name">
+                </div>
 
-        <label for="amount">Questions:</label>
-        <select id="amount">
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-        </select>
+                <div class="field-group">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                </div>
 
-        <label for="type">Type:</label>
-        <select id="type">
-            <option value="multiple-choice">Multiple Choice</option>
-            <option value="true or false">True / False</option>
-        </select>
+                <div class="field-group">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" placeholder="Minimum 6 characters" required>
+                </div>
 
-        <label for="difficulty">Difficulty (MCQ only):</label>
-        <select id="difficulty">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-            <option value="extreme">Extreme 💀</option>
-        </select>
-        
-        <button onclick="fetchQuiz()">Generate</button>
-    </div>
+                <p class="auth-helper" id="auth-helper">Use your email and password to continue to the quiz dashboard.</p>
+                <p class="auth-message" id="auth-message"></p>
+                <button class="auth-submit" type="submit" id="auth-submit">Login</button>
+            </form>
+        </div>
+    </section>
 
-    <p id="loading">Generating your questions please wait !</p>
-    
-    <div id="timer-display"> ⏱️ 00:00</div>
-    
-    <div id="progress-bar-container" style="display:none; background:var(--option-border); border-radius:999px; height:10px; margin-bottom:20px;">
-        <div id="progress-bar" style="height:10px; background:var(--primary); border-radius:999px; width:0%; transition:width 0.4s ease;"></div>
-    </div>
-    <p id="progress-text" style="text-align:center; color:var(--text-muted); font-size:0.9rem; display:none;"></p>
-        
-    <div id="quiz-container"></div>
-    
-    <button id="submit-btn" onclick="calculateScore()">Submit Answers</button>
-    <div id="results"></div>
+    <main class="page-shell">
+        <div class="topbar">
+            <div class="welcome-chip">Welcome back, <strong id="welcome-name">Player</strong></div>
+            <button class="logout-btn" type="button" id="logout-btn">Logout</button>
+        </div>
+
+        <section class="dashboard">
+            <div class="dashboard-head">
+                <div>
+                    <h2>Quiz History Dashboard</h2>
+                    <p>Track your attempts, spot your strongest categories, and keep improving.</p>
+                </div>
+                <button class="clear-history-btn" type="button" id="clear-history-btn">Clear History</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span>Total Attempts</span>
+                    <strong id="stat-attempts">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Best Score</span>
+                    <strong id="stat-best">0%</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Average Score</span>
+                    <strong id="stat-average">0%</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Favorite Topic</span>
+                    <strong id="stat-topic">-</strong>
+                </div>
+            </div>
+
+            <div class="history-list" id="history-list">
+                <div class="history-empty">No quiz attempts yet. Finish a quiz and your history will appear here.</div>
+            </div>
+        </section>
+
+        <h1>AI Quiz Generator</h1>
+
+        <div class="controls-container">
+            <div class="field-group">
+                <label for="category">Topic</label>
+                <select id="category">
+                    <option value="science">Science</option>
+                    <option value="history">History</option>
+                    <option value="geography">Geography</option>
+                    <option value="video games">Video Games</option>
+                    <option value="movies">Movies</option>
+                    <option value="a completely random educational topic">Surprise Me!</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="amount">Questions</label>
+                <select id="amount">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="type">Type</label>
+                <select id="type">
+                    <option value="multiple-choice">Multiple Choice</option>
+                    <option value="true or false">True / False</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="difficulty">Difficulty (MCQ only)</label>
+                <select id="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="extreme">Extreme</option>
+                </select>
+            </div>
+
+            <button type="button" onclick="fetchQuiz()">Generate</button>
+        </div>
+
+        <p id="loading">Generating your questions. Please wait.</p>
+
+        <div id="timer-display">Time Left: 00:00</div>
+
+        <div id="progress-bar-container" style="display:none; background:var(--option-border); border-radius:999px; height:10px; margin-bottom:20px;">
+            <div id="progress-bar" style="height:10px; background:var(--primary); border-radius:999px; width:0%; transition:width 0.4s ease;"></div>
+        </div>
+        <p id="progress-text" style="text-align:center; color:var(--text-muted); font-size:0.9rem; display:none;"></p>
+
+        <div id="quiz-container"></div>
+
+        <button id="submit-btn" type="button" onclick="calculateScore()">Submit Answers</button>
+        <div id="results"></div>
+        <section class="review-panel" id="review-panel">
+            <div class="review-head">
+                <div>
+                    <h2>Review Wrong Answers</h2>
+                    <p>Use this mode to study only the questions you missed or skipped.</p>
+                </div>
+                <button type="button" id="hide-review-btn">Hide Review</button>
+            </div>
+            <div class="review-list" id="review-list"></div>
+        </section>
+    </main>
 
     <script>
         let currentQuizData = [];
         let timerInterval;
         let timeRemaining = 0;
+        let authMode = 'login';
+        let currentQuizConfig = null;
+        let currentWrongAnswers = [];
+
+        function setAuthMode(mode) {
+            authMode = mode;
+            const isSignup = mode === 'signup';
+
+            document.getElementById('name-field').style.display = isSignup ? 'grid' : 'none';
+            document.getElementById('auth-submit').textContent = isSignup ? 'Create Account' : 'Login';
+            document.getElementById('auth-helper').textContent = isSignup
+                ? 'Create a simple local account for this browser, then jump straight into the quiz.'
+                : 'Use your email and password to continue to the quiz dashboard.';
+            document.getElementById('login-tab').classList.toggle('active', !isSignup);
+            document.getElementById('signup-tab').classList.toggle('active', isSignup);
+            setAuthMessage('');
+        }
+
+        function setAuthMessage(message, type = '') {
+            const authMessage = document.getElementById('auth-message');
+            authMessage.textContent = message;
+            authMessage.className = type ? `auth-message ${type}` : 'auth-message';
+        }
+
+        function getStoredUser() {
+            const rawUser = localStorage.getItem('quizUser');
+            return rawUser ? JSON.parse(rawUser) : null;
+        }
+
+        function setSession(user) {
+            localStorage.setItem('quizSession', JSON.stringify(user));
+            updateAuthUI();
+        }
+
+        function getSession() {
+            const rawSession = localStorage.getItem('quizSession');
+            return rawSession ? JSON.parse(rawSession) : null;
+        }
+
+        function getHistoryKey(email) {
+            return `quizHistory_${email}`;
+        }
+
+        function getQuizHistory() {
+            const session = getSession();
+            if (!session || !session.email) {
+                return [];
+            }
+
+            const rawHistory = localStorage.getItem(getHistoryKey(session.email));
+            return rawHistory ? JSON.parse(rawHistory) : [];
+        }
+
+        function saveQuizHistory(history) {
+            const session = getSession();
+            if (!session || !session.email) {
+                return;
+            }
+
+            localStorage.setItem(getHistoryKey(session.email), JSON.stringify(history));
+        }
+
+        function formatQuizDate(isoDate) {
+            return new Date(isoDate).toLocaleString('en-IN', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+        }
+
+        function renderHistoryDashboard() {
+            const session = getSession();
+            const history = getQuizHistory();
+            const historyList = document.getElementById('history-list');
+
+            if (!session) {
+                document.getElementById('stat-attempts').textContent = '0';
+                document.getElementById('stat-best').textContent = '0%';
+                document.getElementById('stat-average').textContent = '0%';
+                document.getElementById('stat-topic').textContent = '-';
+                historyList.innerHTML = '<div class="history-empty">Login to view your quiz history dashboard.</div>';
+                return;
+            }
+
+            const attempts = history.length;
+            const bestScore = attempts ? Math.max(...history.map((entry) => entry.percentage)) : 0;
+            const averageScore = attempts
+                ? Math.round(history.reduce((sum, entry) => sum + entry.percentage, 0) / attempts)
+                : 0;
+
+            const topicCounts = history.reduce((accumulator, entry) => {
+                accumulator[entry.category] = (accumulator[entry.category] || 0) + 1;
+                return accumulator;
+            }, {});
+
+            const favoriteTopicEntry = Object.entries(topicCounts).sort((a, b) => b[1] - a[1])[0];
+            const favoriteTopic = favoriteTopicEntry ? favoriteTopicEntry[0] : '-';
+
+            document.getElementById('stat-attempts').textContent = attempts;
+            document.getElementById('stat-best').textContent = `${bestScore}%`;
+            document.getElementById('stat-average').textContent = `${averageScore}%`;
+            document.getElementById('stat-topic').textContent = favoriteTopic;
+
+            if (!attempts) {
+                historyList.innerHTML = '<div class="history-empty">No quiz attempts yet. Finish a quiz and your history will appear here.</div>';
+                return;
+            }
+
+            historyList.innerHTML = history
+                .slice()
+                .reverse()
+                .map((entry) => `
+                    <article class="history-item">
+                        <div class="history-meta">
+                            <div>
+                                <div class="history-title">${entry.categoryLabel}</div>
+                                <div class="history-date">${formatQuizDate(entry.completedAt)}</div>
+                            </div>
+                            <div class="history-score">${entry.score}/${entry.totalQuestions} (${entry.percentage}%)</div>
+                        </div>
+                        <div class="history-tags">
+                            <span class="history-tag">${entry.typeLabel}</span>
+                            <span class="history-tag">${entry.difficultyLabel}</span>
+                            <span class="history-tag">${entry.totalQuestions} Questions</span>
+                            <span class="history-tag">${entry.answeredQuestions} Answered</span>
+                        </div>
+                    </article>
+                `)
+                .join('');
+        }
+
+        function storeQuizAttempt(score, totalQuestions, answeredQuestions) {
+            if (!currentQuizConfig) {
+                return;
+            }
+
+            const history = getQuizHistory();
+            const percentage = totalQuestions === 0 ? 0 : Math.round((score / totalQuestions) * 100);
+            const entry = {
+                category: currentQuizConfig.category,
+                categoryLabel: currentQuizConfig.categoryLabel,
+                difficulty: currentQuizConfig.difficulty,
+                difficultyLabel: currentQuizConfig.difficultyLabel,
+                type: currentQuizConfig.type,
+                typeLabel: currentQuizConfig.typeLabel,
+                totalQuestions,
+                answeredQuestions,
+                score,
+                percentage,
+                completedAt: new Date().toISOString()
+            };
+
+            history.push(entry);
+            saveQuizHistory(history);
+            renderHistoryDashboard();
+        }
+
+        function updateAuthUI() {
+            const session = getSession();
+
+            if (session) {
+                document.body.classList.add('authenticated');
+                document.getElementById('welcome-name').textContent = session.name || session.email;
+            } else {
+                document.body.classList.remove('authenticated');
+                document.getElementById('welcome-name').textContent = 'Player';
+            }
+
+            renderHistoryDashboard();
+        }
+
+        function resetQuizUI() {
+            clearInterval(timerInterval);
+            currentQuizData = [];
+            currentQuizConfig = null;
+            currentWrongAnswers = [];
+            document.getElementById('quiz-container').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('timer-display').style.display = 'none';
+            document.getElementById('timer-display').style.opacity = '1';
+            document.getElementById('progress-bar-container').style.display = 'none';
+            document.getElementById('progress-text').style.display = 'none';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-text').textContent = '';
+            document.getElementById('review-list').innerHTML = '';
+            document.getElementById('review-panel').classList.remove('visible');
+            document.body.classList.remove('extreme-theme');
+        }
+
+        function hideReviewPanel() {
+            document.getElementById('review-panel').classList.remove('visible');
+        }
+
+        function renderWrongAnswersReview() {
+            const reviewPanel = document.getElementById('review-panel');
+            const reviewList = document.getElementById('review-list');
+
+            if (currentWrongAnswers.length === 0) {
+                reviewList.innerHTML = '<div class="review-empty">Perfect run. You did not miss any questions to review.</div>';
+                reviewPanel.classList.add('visible');
+                return;
+            }
+
+            reviewList.innerHTML = currentWrongAnswers
+                .map((entry) => `
+                    <article class="review-item">
+                        <h3>${entry.index + 1}. ${entry.question}</h3>
+                        <div class="review-row"><span>Your answer:</span> ${entry.userAnswer}</div>
+                        <div class="review-row"><span>Correct answer:</span> ${entry.correctAnswer}</div>
+                        <div class="review-row"><span>Explanation:</span> ${entry.explanation}</div>
+                    </article>
+                `)
+                .join('');
+
+            reviewPanel.classList.add('visible');
+        }
 
         function startTimer(totalSeconds) {
             clearInterval(timerInterval);
             timeRemaining = totalSeconds;
-            
+
             const timerDisplay = document.getElementById('timer-display');
             timerDisplay.style.display = 'block';
 
@@ -311,8 +1005,8 @@
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
                 const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
-                
-                timerDisplay.innerHTML = `⏱️ Time Left: ${minutes}:${formattedSeconds}`;
+
+                timerDisplay.textContent = `Time Left: ${minutes}:${formattedSeconds}`;
 
                 if (timeRemaining <= 10 && timeRemaining > 0) {
                     timerDisplay.style.opacity = timeRemaining % 2 === 0 ? '0.5' : '1';
@@ -320,70 +1014,88 @@
 
                 if (timeRemaining <= 0) {
                     clearInterval(timerInterval);
-                    timerDisplay.innerHTML = "⏱️ TIME'S UP!";
+                    timerDisplay.textContent = "Time's up!";
                     timerDisplay.style.opacity = '1';
-                    calculateScore(); 
+                    calculateScore();
                 }
             }, 1000);
         }
 
         async function fetchQuiz() {
+            if (!getSession()) {
+                setAuthMessage('Please login before generating a quiz.', 'error');
+                updateAuthUI();
+                return;
+            }
+
             const category = document.getElementById('category').value;
-            const amount = parseInt(document.getElementById('amount').value);
+            const amount = parseInt(document.getElementById('amount').value, 10);
             const type = document.getElementById('type').value;
             const difficulty = document.getElementById('difficulty').value;
-            
+            const selectedCategoryLabel = document.getElementById('category').selectedOptions[0].textContent;
+            const selectedTypeLabel = document.getElementById('type').selectedOptions[0].textContent;
+            const selectedDifficultyLabel = type === 'true or false'
+                ? 'True / False'
+                : document.getElementById('difficulty').selectedOptions[0].textContent;
+
             const container = document.getElementById('quiz-container');
             const loading = document.getElementById('loading');
             const submitBtn = document.getElementById('submit-btn');
             const resultsDiv = document.getElementById('results');
             const timerDisplay = document.getElementById('timer-display');
 
-            if (difficulty === "extreme" && type === "multiple-choice") {
-                document.body.classList.add("extreme-theme");
+            if (difficulty === 'extreme' && type === 'multiple-choice') {
+                document.body.classList.add('extreme-theme');
             } else {
-                document.body.classList.remove("extreme-theme");
+                document.body.classList.remove('extreme-theme');
             }
 
             container.innerHTML = '';
             resultsDiv.innerHTML = '';
+            hideReviewPanel();
             submitBtn.style.display = 'none';
-            timerDisplay.style.display = 'none'; 
+            timerDisplay.style.display = 'none';
             timerDisplay.style.opacity = '1';
-            clearInterval(timerInterval); 
+            clearInterval(timerInterval);
             loading.style.display = 'block';
 
             try {
                 let allQuestions = [];
 
-                if (category === "a completely random educational topic") {
-                    Object.values(questionBank).forEach(categoryArray => {
+                if (category === 'a completely random educational topic') {
+                    Object.values(questionBank).forEach((categoryArray) => {
                         allQuestions = allQuestions.concat(categoryArray);
                     });
                 } else {
                     allQuestions = questionBank[category];
                 }
 
-                // FILTERING LOGIC
                 let filteredQuestions = [];
-                if (type === "true or false") {
-                    // Grab only the T/F questions
-                    filteredQuestions = allQuestions.filter(q => q.difficulty === "true/false");
+                if (type === 'true or false') {
+                    filteredQuestions = allQuestions.filter((q) => q.difficulty === 'true/false');
                 } else {
-                    // Grab the MCQ questions based on difficulty
-                    filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
+                    filteredQuestions = allQuestions.filter((q) => q.difficulty === difficulty);
                 }
-                
-                const shuffled = filteredQuestions.sort(() => Math.random() - 0.5);
+
+                const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
                 const questions = shuffled.slice(0, amount);
 
                 if (questions.length === 0) {
                     loading.style.display = 'none';
-                    container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this selection!</p>';
+                    container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this selection.</p>';
                     return;
                 }
 
                 currentQuizData = questions;
+                currentQuizConfig = {
+                    category,
+                    categoryLabel: selectedCategoryLabel,
+                    type,
+                    typeLabel: selectedTypeLabel,
+                    difficulty,
+                    difficultyLabel: selectedDifficultyLabel,
+                    requestedAmount: amount
+                };
                 loading.style.display = 'none';
                 document.getElementById('progress-bar-container').style.display = 'block';
                 document.getElementById('progress-text').style.display = 'block';
@@ -393,19 +1105,20 @@
                     const card = document.createElement('div');
                     card.className = 'question-card';
                     card.id = `card-${index}`;
+
                     let html = `<h3>${index + 1}. ${q.question}</h3>`;
-                    
-                    q.options.forEach(opt => {
-                        let optionClass = "option";
-                        // Apply special styling if it's a T/F question
-                        if (q.difficulty === "true/false") {
-                            optionClass += " tf-option";
+
+                    q.options.forEach((opt) => {
+                        let optionClass = 'option';
+                        if (q.difficulty === 'true/false') {
+                            optionClass += ' tf-option';
                         }
+
                         html += `<label class="${optionClass}"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
                     });
-                    
+
                     card.innerHTML = html;
-                    card.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    card.querySelectorAll('input[type="radio"]').forEach((radio) => {
                         radio.addEventListener('change', () => {
                             const answered = document.querySelectorAll('input[type="radio"]:checked').length;
                             updateProgressBar(answered, currentQuizData.length);
@@ -415,70 +1128,174 @@
                 });
 
                 submitBtn.style.display = 'block';
-                startTimer(questions.length * 15); 
-
+                startTimer(questions.length * 15);
             } catch (error) {
                 loading.style.display = 'none';
                 container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz data.</p>';
                 console.error(error);
             }
         }
-        
+
         function calculateScore() {
             clearInterval(timerInterval);
 
+            if (currentQuizData.length === 0) {
+                return;
+            }
+
             let score = 0;
+            let answeredQuestions = 0;
+            currentWrongAnswers = [];
             const resultsDiv = document.getElementById('results');
             const submitBtn = document.getElementById('submit-btn');
-            
-            const isExtreme = document.body.classList.contains("extreme-theme");
+            const isExtreme = document.body.classList.contains('extreme-theme');
 
             currentQuizData.forEach((q, index) => {
                 const selectedOption = document.querySelector(`input[name="question${index}"]:checked`);
                 const card = document.getElementById(`card-${index}`);
 
+                if (!card) {
+                    return;
+                }
+
                 if (selectedOption) {
+                    answeredQuestions++;
                     if (selectedOption.value === q.correctAnswer) {
                         score++;
-                        updateProgressBar(index + 1, currentQuizData.length);
-                        card.style.borderColor = 'var(--correct)'; 
-                        card.style.backgroundColor = isExtreme ? '#064e3b' : '#ECFDF5'; 
-                        card.innerHTML += `<div class="correct-text">✓ Correct!</div>`;
+                        card.style.borderColor = 'var(--correct)';
+                        card.style.backgroundColor = isExtreme ? '#064e3b' : '#ecfdf5';
+                        card.innerHTML += '<div class="correct-text">Correct!</div>';
                     } else {
-                        card.style.borderColor = 'var(--wrong)'; 
-                        card.style.backgroundColor = isExtreme ? '#450a0a' : '#FEF2F2'; 
+                        currentWrongAnswers.push({
+                            index,
+                            question: q.question,
+                            userAnswer: selectedOption.value,
+                            correctAnswer: q.correctAnswer,
+                            explanation: q.explanation
+                        });
+                        card.style.borderColor = 'var(--wrong)';
+                        card.style.backgroundColor = isExtreme ? '#450a0a' : '#fef2f2';
                         card.innerHTML += `
-                            <div class="wrong-text">✗ Wrong! The correct answer was: <strong>${q.correctAnswer}</strong></div>
+                            <div class="wrong-text">Wrong! The correct answer was: <strong>${q.correctAnswer}</strong></div>
                             <div style="margin-top: 10px; font-size: 0.95rem; color: var(--text-muted);"><em><strong>Explanation:</strong> ${q.explanation}</em></div>
                         `;
                     }
                 } else {
-                    card.style.borderColor = '#F59E0B'; 
-                    card.style.backgroundColor = isExtreme ? '#451a03' : '#FFFBEB'; 
+                    currentWrongAnswers.push({
+                        index,
+                        question: q.question,
+                        userAnswer: 'Skipped',
+                        correctAnswer: q.correctAnswer,
+                        explanation: q.explanation
+                    });
+                    card.style.borderColor = '#f59e0b';
+                    card.style.backgroundColor = isExtreme ? '#451a03' : '#fffbeb';
                     card.innerHTML += `
-                        <div class="wrong-text" style="color: #D97706;">⚠ You skipped this one! The correct answer was: <strong>${q.correctAnswer}</strong></div>
+                        <div class="wrong-text" style="color: #d97706;">You skipped this one! The correct answer was: <strong>${q.correctAnswer}</strong></div>
                         <div style="margin-top: 10px; font-size: 0.95rem; color: var(--text-muted);"><em><strong>Explanation:</strong> ${q.explanation}</em></div>
                     `;
                 }
 
-                const allRadios = card.querySelectorAll('input[type="radio"]');
-                allRadios.forEach(radio => radio.disabled = true);
+                card.querySelectorAll('input[type="radio"]').forEach((radio) => {
+                    radio.disabled = true;
+                });
             });
 
             resultsDiv.style.background = 'var(--card-bg)';
             resultsDiv.style.padding = '20px';
             resultsDiv.style.borderRadius = '12px';
             resultsDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
-            resultsDiv.innerHTML = `You scored ${score} out of ${currentQuizData.length}! 🎉`;
-            
+            resultsDiv.innerHTML = `
+                You scored ${score} out of ${currentQuizData.length}! (${Math.round((score / currentQuizData.length) * 100)}%)
+                <div style="margin-top: 14px;">
+                    <button type="button" id="review-wrong-btn">Review Wrong Answers</button>
+                </div>
+            `;
+
             submitBtn.style.display = 'none';
+            updateProgressBar(currentQuizData.length, currentQuizData.length);
+            storeQuizAttempt(score, currentQuizData.length, answeredQuestions);
+            document.getElementById('review-wrong-btn').addEventListener('click', renderWrongAnswersReview);
         }
 
         function updateProgressBar(answered, total) {
-            const percent = (answered / total) * 100;
+            const percent = total === 0 ? 0 : (answered / total) * 100;
             document.getElementById('progress-bar').style.width = percent + '%';
-            document.getElementById('progress-text').textContent = `Question ${answered} of ${total}`;
+            document.getElementById('progress-text').textContent = total === 0 ? '' : `Question ${answered} of ${total}`;
         }
+
+        document.getElementById('login-tab').addEventListener('click', () => setAuthMode('login'));
+        document.getElementById('signup-tab').addEventListener('click', () => setAuthMode('signup'));
+
+        document.getElementById('auth-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                setAuthMessage('Email and password are required.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                setAuthMessage('Password must be at least 6 characters long.', 'error');
+                return;
+            }
+
+            if (authMode === 'signup') {
+                if (!name) {
+                    setAuthMessage('Please add your name to create the account.', 'error');
+                    return;
+                }
+
+                const user = { name, email, password };
+                localStorage.setItem('quizUser', JSON.stringify(user));
+                setSession({ name, email });
+                setAuthMessage('Account created. You are now logged in.', 'success');
+                event.target.reset();
+                setAuthMode('login');
+                return;
+            }
+
+            const storedUser = getStoredUser();
+            if (!storedUser) {
+                setAuthMessage('No account found yet. Use Sign Up first.', 'error');
+                return;
+            }
+
+            if (storedUser.email !== email || storedUser.password !== password) {
+                setAuthMessage('Incorrect email or password.', 'error');
+                return;
+            }
+
+            setSession({ name: storedUser.name, email: storedUser.email });
+            setAuthMessage('Welcome back. Login successful.', 'success');
+            event.target.reset();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('quizSession');
+            resetQuizUI();
+            updateAuthUI();
+            setAuthMessage('You have been logged out.', 'success');
+        });
+
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            const session = getSession();
+            if (!session) {
+                return;
+            }
+
+            localStorage.removeItem(getHistoryKey(session.email));
+            renderHistoryDashboard();
+        });
+
+        document.getElementById('hide-review-btn').addEventListener('click', hideReviewPanel);
+
+        setAuthMode('login');
+        updateAuthUI();
     </script>
 </body>
 </html>
