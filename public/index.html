@@ -703,6 +703,14 @@
 
         <div class="controls-container">
             <div class="field-group">
+                <label for="quiz-source">Question Source</label>
+                <select id="quiz-source">
+                    <option value="local" selected>Predefined Questions</option>
+                    <option value="gemini">Generate with Gemini API</option>
+                </select>
+            </div>
+
+            <div class="field-group">
                 <label for="category">Topic</label>
                 <select id="category">
                     <option value="science">Science</option>
@@ -712,6 +720,11 @@
                     <option value="movies">Movies</option>
                     <option value="a completely random educational topic">Surprise Me!</option>
                 </select>
+            </div>
+
+            <div class="field-group" id="custom-topic-field" style="display:none;">
+                <label for="custom-topic">Custom Topic for Gemini</label>
+                <input id="custom-topic" type="text" placeholder="Example: Indian history, JavaScript, football">
             </div>
 
             <div class="field-group">
@@ -777,6 +790,9 @@
         let authMode = 'login';
         let currentQuizConfig = null;
         let currentWrongAnswers = [];
+        const USERS_STORAGE_KEY = 'quizUsers';
+        const LEGACY_USER_STORAGE_KEY = 'quizUser';
+        const SESSION_STORAGE_KEY = 'quizSession';
 
         function setAuthMode(mode) {
             authMode = mode;
@@ -798,19 +814,86 @@
             authMessage.className = type ? `auth-message ${type}` : 'auth-message';
         }
 
-        function getStoredUser() {
-            const rawUser = localStorage.getItem('quizUser');
-            return rawUser ? JSON.parse(rawUser) : null;
+        function getQuizSource() {
+            return document.getElementById('quiz-source').value;
+        }
+
+        function updateQuizSourceUI() {
+            const source = getQuizSource();
+            const customTopicField = document.getElementById('custom-topic-field');
+            const categoryField = document.getElementById('category');
+            const difficultyField = document.getElementById('difficulty');
+
+            customTopicField.style.display = source === 'gemini' ? 'grid' : 'none';
+            categoryField.disabled = false;
+            difficultyField.disabled = false;
+        }
+
+        function readStorageJson(key, fallbackValue) {
+            try {
+                const rawValue = localStorage.getItem(key);
+                return rawValue ? JSON.parse(rawValue) : fallbackValue;
+            } catch (error) {
+                console.error(`Unable to read ${key} from localStorage.`, error);
+                return fallbackValue;
+            }
+        }
+
+        function getStoredUsers() {
+            const users = readStorageJson(USERS_STORAGE_KEY, []);
+            return Array.isArray(users) ? users : [];
+        }
+
+        function saveStoredUsers(users) {
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+        }
+
+        function getStoredUser(email) {
+            if (!email) {
+                return null;
+            }
+
+            return getStoredUsers().find((user) => user.email === email) || null;
+        }
+
+        function migrateLegacyUser() {
+            const legacyUser = readStorageJson(LEGACY_USER_STORAGE_KEY, null);
+            if (!legacyUser || !legacyUser.email) {
+                return;
+            }
+
+            const users = getStoredUsers();
+            const alreadyExists = users.some((user) => user.email === legacyUser.email);
+
+            if (!alreadyExists) {
+                users.push(legacyUser);
+                saveStoredUsers(users);
+            }
+
+            localStorage.removeItem(LEGACY_USER_STORAGE_KEY);
         }
 
         function setSession(user) {
-            localStorage.setItem('quizSession', JSON.stringify(user));
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
             updateAuthUI();
         }
 
         function getSession() {
-            const rawSession = localStorage.getItem('quizSession');
-            return rawSession ? JSON.parse(rawSession) : null;
+            const session = readStorageJson(SESSION_STORAGE_KEY, null);
+            if (!session || !session.email) {
+                return null;
+            }
+
+            const storedUser = getStoredUser(session.email);
+            if (!storedUser) {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+                return null;
+            }
+
+            return {
+                name: storedUser.name,
+                email: storedUser.email
+            };
         }
 
         function getHistoryKey(email) {
@@ -939,6 +1022,7 @@
             } else {
                 document.body.classList.remove('authenticated');
                 document.getElementById('welcome-name').textContent = 'Player';
+                document.getElementById('password').value = '';
             }
 
             renderHistoryDashboard();
@@ -966,6 +1050,130 @@
 
         function hideReviewPanel() {
             document.getElementById('review-panel').classList.remove('visible');
+        }
+
+        function resetQuizDisplay() {
+            const container = document.getElementById('quiz-container');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultsDiv = document.getElementById('results');
+            const timerDisplay = document.getElementById('timer-display');
+
+            container.innerHTML = '';
+            resultsDiv.innerHTML = '';
+            hideReviewPanel();
+            submitBtn.style.display = 'none';
+            timerDisplay.style.display = 'none';
+            timerDisplay.style.opacity = '1';
+            clearInterval(timerInterval);
+            loading.style.display = 'block';
+        }
+
+        function applyQuizTheme(difficulty, type) {
+            if (difficulty === 'extreme' && type === 'multiple-choice') {
+                document.body.classList.add('extreme-theme');
+            } else {
+                document.body.classList.remove('extreme-theme');
+            }
+        }
+
+        function normalizeGeneratedQuestions(questions, type) {
+            return questions.map((question) => ({
+                question: question.question,
+                options: question.options,
+                correctAnswer: question.correctAnswer,
+                explanation: question.explanation || 'No explanation provided.',
+                difficulty: type === 'true or false' ? 'true/false' : (question.difficulty || 'medium').toLowerCase()
+            }));
+        }
+
+        function renderQuiz(questions, config) {
+            const container = document.getElementById('quiz-container');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (questions.length === 0) {
+                loading.style.display = 'none';
+                container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this selection.</p>';
+                return;
+            }
+
+            currentQuizData = questions;
+            currentQuizConfig = config;
+            loading.style.display = 'none';
+            document.getElementById('progress-bar-container').style.display = 'block';
+            document.getElementById('progress-text').style.display = 'block';
+            updateProgressBar(0, questions.length);
+
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.id = `card-${index}`;
+
+                let html = `<h3>${index + 1}. ${q.question}</h3>`;
+
+                q.options.forEach((opt) => {
+                    let optionClass = 'option';
+                    if (q.difficulty === 'true/false') {
+                        optionClass += ' tf-option';
+                    }
+
+                    html += `<label class="${optionClass}"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
+                });
+
+                card.innerHTML = html;
+                card.querySelectorAll('input[type="radio"]').forEach((radio) => {
+                    radio.addEventListener('change', () => {
+                        const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+                        updateProgressBar(answered, currentQuizData.length);
+                    });
+                });
+                container.appendChild(card);
+            });
+
+            submitBtn.style.display = 'block';
+            startTimer(questions.length * 15);
+        }
+
+        function getLocalQuestions(category, amount, type, difficulty) {
+            let allQuestions = [];
+
+            if (category === 'a completely random educational topic') {
+                Object.values(questionBank).forEach((categoryArray) => {
+                    allQuestions = allQuestions.concat(categoryArray);
+                });
+            } else {
+                allQuestions = questionBank[category] || [];
+            }
+
+            const filteredQuestions = type === 'true or false'
+                ? allQuestions.filter((q) => q.difficulty === 'true/false')
+                : allQuestions.filter((q) => q.difficulty === difficulty);
+
+            return [...filteredQuestions].sort(() => Math.random() - 0.5).slice(0, amount);
+        }
+
+        async function getGeminiQuestions(topic, amount, type, difficulty) {
+            const response = await fetch('/api/generate-quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic,
+                    amount,
+                    type,
+                    difficulty
+                })
+            });
+
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.error || 'Gemini quiz generation failed.');
+            }
+
+            return normalizeGeneratedQuestions(payload.questions || [], type);
         }
 
         function renderWrongAnswersReview() {
@@ -1028,7 +1236,11 @@
                 return;
             }
 
+            setAuthMessage('');
+
+            const source = getQuizSource();
             const category = document.getElementById('category').value;
+            const customTopic = document.getElementById('custom-topic').value.trim();
             const amount = parseInt(document.getElementById('amount').value, 10);
             const type = document.getElementById('type').value;
             const difficulty = document.getElementById('difficulty').value;
@@ -1037,101 +1249,34 @@
             const selectedDifficultyLabel = type === 'true or false'
                 ? 'True / False'
                 : document.getElementById('difficulty').selectedOptions[0].textContent;
+            const topic = source === 'gemini' && customTopic ? customTopic : category;
+            const topicLabel = source === 'gemini' && customTopic ? customTopic : selectedCategoryLabel;
 
-            const container = document.getElementById('quiz-container');
-            const loading = document.getElementById('loading');
-            const submitBtn = document.getElementById('submit-btn');
-            const resultsDiv = document.getElementById('results');
-            const timerDisplay = document.getElementById('timer-display');
-
-            if (difficulty === 'extreme' && type === 'multiple-choice') {
-                document.body.classList.add('extreme-theme');
-            } else {
-                document.body.classList.remove('extreme-theme');
-            }
-
-            container.innerHTML = '';
-            resultsDiv.innerHTML = '';
-            hideReviewPanel();
-            submitBtn.style.display = 'none';
-            timerDisplay.style.display = 'none';
-            timerDisplay.style.opacity = '1';
-            clearInterval(timerInterval);
-            loading.style.display = 'block';
+            applyQuizTheme(difficulty, type);
+            resetQuizDisplay();
 
             try {
-                let allQuestions = [];
+                let questions = [];
 
-                if (category === 'a completely random educational topic') {
-                    Object.values(questionBank).forEach((categoryArray) => {
-                        allQuestions = allQuestions.concat(categoryArray);
-                    });
+                if (source === 'gemini') {
+                    questions = await getGeminiQuestions(topic, amount, type, difficulty);
                 } else {
-                    allQuestions = questionBank[category];
+                    questions = getLocalQuestions(category, amount, type, difficulty);
                 }
 
-                let filteredQuestions = [];
-                if (type === 'true or false') {
-                    filteredQuestions = allQuestions.filter((q) => q.difficulty === 'true/false');
-                } else {
-                    filteredQuestions = allQuestions.filter((q) => q.difficulty === difficulty);
-                }
-
-                const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
-                const questions = shuffled.slice(0, amount);
-
-                if (questions.length === 0) {
-                    loading.style.display = 'none';
-                    container.innerHTML = '<p style="color: var(--wrong); text-align: center;">No questions found for this selection.</p>';
-                    return;
-                }
-
-                currentQuizData = questions;
-                currentQuizConfig = {
-                    category,
-                    categoryLabel: selectedCategoryLabel,
+                renderQuiz(questions, {
+                    source,
+                    category: topic,
+                    categoryLabel: topicLabel,
                     type,
                     typeLabel: selectedTypeLabel,
                     difficulty,
                     difficultyLabel: selectedDifficultyLabel,
                     requestedAmount: amount
-                };
-                loading.style.display = 'none';
-                document.getElementById('progress-bar-container').style.display = 'block';
-                document.getElementById('progress-text').style.display = 'block';
-                updateProgressBar(0, questions.length);
-
-                questions.forEach((q, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'question-card';
-                    card.id = `card-${index}`;
-
-                    let html = `<h3>${index + 1}. ${q.question}</h3>`;
-
-                    q.options.forEach((opt) => {
-                        let optionClass = 'option';
-                        if (q.difficulty === 'true/false') {
-                            optionClass += ' tf-option';
-                        }
-
-                        html += `<label class="${optionClass}"><input type="radio" name="question${index}" value="${opt}"> ${opt}</label>`;
-                    });
-
-                    card.innerHTML = html;
-                    card.querySelectorAll('input[type="radio"]').forEach((radio) => {
-                        radio.addEventListener('change', () => {
-                            const answered = document.querySelectorAll('input[type="radio"]:checked').length;
-                            updateProgressBar(answered, currentQuizData.length);
-                        });
-                    });
-                    container.appendChild(card);
                 });
-
-                submitBtn.style.display = 'block';
-                startTimer(questions.length * 15);
             } catch (error) {
-                loading.style.display = 'none';
-                container.innerHTML = '<p style="color: var(--wrong); text-align: center; font-weight: bold;">Error loading quiz data.</p>';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('quiz-container').innerHTML = `<p style="color: var(--wrong); text-align: center; font-weight: bold;">${error.message || 'Error loading quiz data.'}</p>`;
                 console.error(error);
             }
         }
@@ -1226,6 +1371,7 @@
 
         document.getElementById('login-tab').addEventListener('click', () => setAuthMode('login'));
         document.getElementById('signup-tab').addEventListener('click', () => setAuthMode('signup'));
+        document.getElementById('quiz-source').addEventListener('change', updateQuizSourceUI);
 
         document.getElementById('auth-form').addEventListener('submit', (event) => {
             event.preventDefault();
@@ -1251,7 +1397,16 @@
                 }
 
                 const user = { name, email, password };
-                localStorage.setItem('quizUser', JSON.stringify(user));
+                const users = getStoredUsers();
+                const existingUser = users.find((entry) => entry.email === email);
+
+                if (existingUser) {
+                    setAuthMessage('An account with this email already exists. Please login instead.', 'error');
+                    return;
+                }
+
+                users.push(user);
+                saveStoredUsers(users);
                 setSession({ name, email });
                 setAuthMessage('Account created. You are now logged in.', 'success');
                 event.target.reset();
@@ -1259,7 +1414,7 @@
                 return;
             }
 
-            const storedUser = getStoredUser();
+            const storedUser = getStoredUser(email);
             if (!storedUser) {
                 setAuthMessage('No account found yet. Use Sign Up first.', 'error');
                 return;
@@ -1276,7 +1431,7 @@
         });
 
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.removeItem('quizSession');
+            localStorage.removeItem(SESSION_STORAGE_KEY);
             resetQuizUI();
             updateAuthUI();
             setAuthMessage('You have been logged out.', 'success');
@@ -1294,7 +1449,9 @@
 
         document.getElementById('hide-review-btn').addEventListener('click', hideReviewPanel);
 
+        migrateLegacyUser();
         setAuthMode('login');
+        updateQuizSourceUI();
         updateAuthUI();
     </script>
 </body>
